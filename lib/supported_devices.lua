@@ -49,6 +49,11 @@ local supported_devices = {
     -- Midiplus SmartPad
     { midi_base_name = 'smartpad', device_type='smartpad' },
 
+    -- 203 Systems Mystrix Pro (MatrixOS Performance mode)
+    -- Newer firmware: "Mystrix Pro <port>" (e.g. "Mystrix Pro 1", "Mystrix Pro 2")
+    -- Older firmware: "Mystrix Pro <deviceId> <port>" (deviceId configurable in MatrixOS).
+    -- Pattern matching in find_midi_device_type() handles both formats.
+
   }
 }
 
@@ -57,7 +62,15 @@ function supported_devices.find_midi_device_type(midi_device)
   local sysex_ident_resp = nil
   -- TODO get response to sysex indentify call
 
-  if string.lower(midi_device.name):find 'launchpad mini %d' then
+  if string.lower(midi_device.name):find '^mystrix pro %d+$'
+      or string.lower(midi_device.name):find 'mystrix pro %d+ %d+'
+  then
+    -- Mystrix Pro appears over USB MIDI in two naming formats:
+    --   "Mystrix Pro <port>"          — newer firmware (port only, e.g. "Mystrix Pro 1", "Mystrix Pro 2")
+    --   "Mystrix Pro <deviceId> <port>" — older firmware (user-configurable deviceId 1-63 + port)
+    -- In both cases the programmer/MIDI port is the last number.
+    return 'mystrix_pro'
+  elseif string.lower(midi_device.name):find 'launchpad mini %d' then
     -- Old launchpad mini's have user set hardware ID 1 - 16:
     -- e.g. ID 4 appears as midi_device.name "Launchpad Mini 4"
     return 'launchpad'
